@@ -2,15 +2,30 @@
 
 #include "ChooseNextWaypoint.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BrainComponent.h"
+#include "PatrollingGuard.h"
+#include "AIController.h"
 
 EBTNodeResult::Type UChooseNextWaypoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("ExecuteTask"));
 
-	/* OwnerComp is a BehaviorTree Owner Component reference */ 
+	//Get The Patrol Points
+	auto AIController = OwnerComp.GetAIOwner();
+	auto ControlledPawn = AIController->GetPawn();
+	auto PatrollingGuard = Cast<APatrollingGuard>(ControlledPawn);
+	auto PatrolPoints = PatrollingGuard->GetPatrolPoints();
+
+	//Set Next Waypoint
+	/* OwnerComp is a BehaviorTree Owner Component reference */
 	auto BlackboardComp = OwnerComp.GetBlackboardComponent();
 	auto Index = BlackboardComp->GetValueAsInt(IndexKey.SelectedKeyName);
-	UE_LOG(LogTemp, Warning, TEXT("Index %i"), Index);
+	BlackboardComp->SetValueAsObject(WayPoinKey.SelectedKeyName, PatrolPoints[Index]);
+
+	//Cycle Index
+	auto NextIndex = (Index + 1) % PatrolPoints.Num();
+	BlackboardComp->SetValueAsInt(IndexKey.SelectedKeyName, NextIndex);
+
 
 	return EBTNodeResult::Succeeded;
 }
